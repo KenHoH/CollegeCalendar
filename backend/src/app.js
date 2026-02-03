@@ -64,7 +64,6 @@ app.get('/auth/callback', async (req, res) => {
 
 oauth2Client.on('tokens', (tokens) => {
   if (tokens.refresh_token) {
-    // store the refresh_token in my database!
     console.log(tokens.refresh_token);
   }
   console.log(tokens.access_token);
