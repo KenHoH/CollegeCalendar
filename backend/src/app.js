@@ -3,8 +3,8 @@ const express = require('express');
 const app = express();
 const port = 3000;
 
-
 const {google} = require('googleapis');
+const cookieParser = require('cookie-parser');
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.CLIENT_ID,
@@ -24,12 +24,7 @@ const url = oauth2Client.generateAuthUrl({
   scope: scopes
 });
 
-oauth2Client.on('tokens', (tokens) => {
-  if (tokens.refresh_token) {
-    console.log('Refresh token:', tokens.refresh_token);
-  }
-  console.log('Access token:', tokens.access_token);
-});
+app.use(cookieParser());
 
 app.get('/', (req, res) => {
   res.send('Hello World from Express!');
@@ -55,6 +50,20 @@ app.get('/auth/callback', async (req, res) => {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
+
+    console.log("Refresh Token", tokens.refresh_token);
+
+    res.cookie('accessToken', tokens.access_token, {
+      maxAge: 900000, // Cookie expiration time in milliseconds (15 minutes)
+      httpOnly: true, // Makes the cookie inaccessible to client-side JavaScript, mitigating XSS attacks
+      secure: process.env.NODE_ENV === 'production', // Only send over HTTPS in production
+      sameSite: 'Strict' // Controls when the cookie is sent with cross-site requests
+    });
+
+    oauth2Client.setCredentials({
+      refresh_token: tokens.refresh_token
+    });
+
     res.redirect('/');
   } catch (err) {
     console.error('OAuth error:', err);
@@ -71,4 +80,5 @@ oauth2Client.on('tokens', (tokens) => {
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
+  console.log(process.env.HELLO);
 });

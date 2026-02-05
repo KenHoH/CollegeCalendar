@@ -13,11 +13,14 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@prisma/adapter-pg": "^7.3.0",
     "@types/express": "^5.0.6",
     "axios": "^1.13.4",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
-    "googleapis": "^171.1.0"
+    "googleapis": "^171.1.0",
+    "prisma": "^7.3.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"
