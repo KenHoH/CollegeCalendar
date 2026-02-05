@@ -78,9 +78,15 @@ app.get('/auth/callback', async (req, res) => {
 
 app.get('/events', async (req, res) => {
   try {
+
+    const accessToken = req.cookies.accessToken;
+
+    if (!accessToken) {
+      return res.status(401).send('Not authenticated');
+    }
+
     oauth2Client.setCredentials({
-      access_token: req.accessToken,
-      refresh_token: oauth2Client.credentials.refresh_token,
+      access_token: accessToken
     });
 
     const response = await calendar.events.list({
@@ -93,23 +99,33 @@ app.get('/events', async (req, res) => {
 
     res.json(response.data.items);
   } catch (error) {
-    console.error('Error listing events:', error);
+    console.log('Error listing events:', error);
     res.status(500).json({ error: 'Failed to get events' });
   }
 });
 
 app.post('/create/calendar', async (req, res) => {
   try {
+
+    const accessToken = req.cookies.accessToken;
+
+    if (!accessToken) {
+      return res.status(401).send('Not authenticated');
+    }
+
+    oauth2Client.setCredentials({
+      access_token: accessToken
+    });
     const event = {
       summary: 'Test Event from Node.js',
       description: 'This event was created using Google Calendar API',
       start: {
         dateTime: '2026-02-06T10:00:00-05:00',
-        timeZone: 'America/New_York',
+        timeZone: 'Asia/Jakarta',
       },
       end: {
         dateTime: '2026-02-06T11:00:00-05:00',
-        timeZone: 'America/New_York',
+        timeZone: 'Asia/Jakarta',
       },
     };
 
@@ -123,7 +139,7 @@ app.post('/create/calendar', async (req, res) => {
       eventLink: response.data.htmlLink,
     });
   } catch (error) {
-    console.error('Error creating event:', error);
+    console.log('Error creating event:', error);
     res.status(500).json({ error: 'Failed to create event' });
   }
 });
