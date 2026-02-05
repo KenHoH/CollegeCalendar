@@ -12,6 +12,11 @@ const oauth2Client = new google.auth.OAuth2(
   process.env.REDIRECT_URL
 );
 
+const calendar = google.calendar({
+  version: 'v3',
+  auth: oauth2Client
+})
+
 const scopes = [
   'https://www.googleapis.com/auth/calendar'
 ];
@@ -54,10 +59,10 @@ app.get('/auth/callback', async (req, res) => {
     console.log("Refresh Token", tokens.refresh_token);
 
     res.cookie('accessToken', tokens.access_token, {
-      maxAge: 900000, // Cookie expiration time in milliseconds (15 minutes)
-      httpOnly: true, // Makes the cookie inaccessible to client-side JavaScript, mitigating XSS attacks
-      secure: process.env.NODE_ENV === 'production', // Only send over HTTPS in production
-      sameSite: 'Strict' // Controls when the cookie is sent with cross-site requests
+      maxAge: 900000, 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === 'production', 
+      sameSite: 'Strict' 
     });
 
     oauth2Client.setCredentials({
@@ -70,6 +75,59 @@ app.get('/auth/callback', async (req, res) => {
     res.status(500).send('Authentication failed');
   }
 });
+
+app.get('/events', async (req, res) => {
+  try {
+    oauth2Client.setCredentials({
+      access_token: req.accessToken,
+      refresh_token: oauth2Client.credentials.refresh_token,
+    });
+
+    const response = await calendar.events.list({
+      calendarId: 'primary',           
+      timeMin: (new Date()).toISOString(), 
+      maxResults: 10,                  
+      singleEvents: true,
+      orderBy: 'startTime',
+    });
+
+    res.json(response.data.items);
+  } catch (error) {
+    console.error('Error listing events:', error);
+    res.status(500).json({ error: 'Failed to get events' });
+  }
+});
+
+app.post('/create/calendar', async (req, res) => {
+  try {
+    const event = {
+      summary: 'Test Event from Node.js',
+      description: 'This event was created using Google Calendar API',
+      start: {
+        dateTime: '2026-02-06T10:00:00-05:00',
+        timeZone: 'America/New_York',
+      },
+      end: {
+        dateTime: '2026-02-06T11:00:00-05:00',
+        timeZone: 'America/New_York',
+      },
+    };
+
+    const response = await calendar.events.insert({
+      calendarId: 'primary',
+      resource: event,
+    });
+
+    res.json({
+      message: 'Event created successfully',
+      eventLink: response.data.htmlLink,
+    });
+  } catch (error) {
+    console.error('Error creating event:', error);
+    res.status(500).json({ error: 'Failed to create event' });
+  }
+});
+
 
 oauth2Client.on('tokens', (tokens) => {
   if (tokens.refresh_token) {
