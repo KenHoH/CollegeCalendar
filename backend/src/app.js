@@ -77,7 +77,17 @@ app.get('/auth/callback', async (req, res) => {
   }
 });
 
-app.get('/college', async (req, res) => {
+app.post('/college', async (req, res) => {
+
+  const accessToken = req.cookies.accessToken;
+
+  if (!accessToken) {
+    return res.status(401).send('Not authenticated');
+  }
+
+  oauth2Client.setCredentials({
+    access_token: accessToken
+  });
   const postData = {
     "roleActivity": [
       {
@@ -95,7 +105,7 @@ app.get('/college', async (req, res) => {
   }
 
   try {
-    const response = await axios.post('https://func-bm7-schedule-prod.azurewebsites.net/api/Schedule/Month-v1/2026-2-1', postData ,{
+    const {data} = await axios.post('https://func-bm7-schedule-prod.azurewebsites.net/api/Schedule/Month-v1/2026-6-1', postData ,{
       headers: {
         "Authorization":"Bearer eyJhbGciOiJQUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6ImQ1MTc4ZmQzLThhNzQtNDEwMy1hNzcxLTNjNjVmYWQwYmQ2MiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJLRU5ORVRIIE1BWElNSUxMSUFOIFBSQU5BVEEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJrZW5uZXRoLnByYW5hdGFAYmludXMuYWMuaWQiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOlsiQk4xMjUyNjIzOTEiLCJHdWVzdCJdLCJuYmYiOjE3NzAyNzA4ODcsImV4cCI6MTc3MDM1NzI4NywiaXNzIjoiQmludXNTZXJ2aWNlcyIsImF1ZCI6Ik5leHVzLklkZW50aXR5U2VydmljZSJ9.RkGmHzwrxUDbjLnjiLvVeiWgS3oQppttI6Q1xlUnau3iAZk_uXBYUQBDr4ra5hpGKzIEb9EJAhZYGxl-pUjAmccTAZWwThyhtsw9eNlvZntmbqHs5TaqH7SS1YKJVZAJ7-NXkbSBjgogea8MKWxVLlfTl8J7K3CaSS3S9mz2O74",
         "academicCareer":"RS1",
@@ -106,12 +116,34 @@ app.get('/college', async (req, res) => {
       }, 
       timeout: 10000 
     })
-    res.json(response.data);
+
+    const events = data.flatMap(element =>
+      element.Schedule.map(e => ({
+        summary: `${e.content} ${e.location}`,
+        description: `${e.title} ${e.content} session = ${e.customParam.sessionNumber}`,
+        start: {
+          dateTime: e.dateStart,
+          timeZone: 'Asia/Jakarta',
+        },
+        end: {
+          dateTime: e.dateEnd,
+          timeZone: 'Asia/Jakarta',
+        },
+      }))
+    );
+
+    console.log(events);  
+    for (const event of events) {
+      await calendar.events.insert({
+        calendarId: "8a81368bcb550c4f32165a33f2d6fe1daf676f50cffe45169af9d07e63161ed9@group.calendar.google.com",
+        resource: event,
+      });
+    }
+    res.json({ inserted: events.length });
   } catch (error) {
     console.log(error.message);
     res.status(500).json({ error: 'Request failed' });
   }
-
 })
 
 app.get('/events', async (req, res) => {
@@ -127,15 +159,29 @@ app.get('/events', async (req, res) => {
       access_token: accessToken
     });
 
-    const response = await calendar.events.list({
-      calendarId: 'primary',           
-      timeMin: (new Date()).toISOString(), 
-      maxResults: 10,                  
-      singleEvents: true,
-      orderBy: 'startTime',
-    });
+    const calendarsRes = await calendar.calendarList.list();
+    res.json(calendarsRes);
+    const calendars = calendarsRes.data.items;
 
-    res.json(response.data.items);
+
+    // const now = new Date().toISOString();
+
+    // const allEvents = await Promise.all(
+    //   calendars.map(cal =>
+    //     calendar.events.list({
+    //       calendarId: cal.id,
+    //       timeMin: now,
+    //       singleEvents: true,
+    //       orderBy: 'startTime',
+    //     }).then(res => ({
+    //       calendar: cal.summary,
+    //       events: res.data.items,
+    //     }))
+    //   )
+    // );
+
+
+    res.json(allEvents);
   } catch (error) {
     console.log('Error listing events:', error);
     res.status(500).json({ error: 'Failed to get events' });
