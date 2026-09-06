@@ -10,7 +10,7 @@ const cookieParser = require('cookie-parser');
 const oauth2Client = new google.auth.OAuth2(
   process.env.CLIENT_ID,
   process.env.CLIENT_SECRET,
-  process.env.REDIRECT_URL
+  process.env.REDIRECT_URI
 );
 
 const calendar = google.calendar({
@@ -19,6 +19,7 @@ const calendar = google.calendar({
 })
 
 const scopes = [
+  'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/calendar'
 ];
 
@@ -45,7 +46,7 @@ app.get('/auth/google', (req, res) => {
   res.redirect(url);
 });
 
-app.get('/auth/callback', async (req, res) => {
+app.get('/auth/google/callback', async (req, res) => {
   try {
     const { code } = req.query;
 
@@ -105,9 +106,9 @@ app.post('/college', async (req, res) => {
   }
 
   try {
-    const {data} = await axios.post('https://func-bm7-schedule-prod.azurewebsites.net/api/Schedule/Month-v1/2026-6-1', postData ,{
+    const {data} = await axios.post('https://func-bm7-schedule-prod.azurewebsites.net/api/Schedule/Month-v1/2026-9-1', postData ,{
       headers: {
-        "Authorization":"Bearer eyJhbGciOiJQUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6ImQ1MTc4ZmQzLThhNzQtNDEwMy1hNzcxLTNjNjVmYWQwYmQ2MiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJLRU5ORVRIIE1BWElNSUxMSUFOIFBSQU5BVEEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJrZW5uZXRoLnByYW5hdGFAYmludXMuYWMuaWQiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOlsiQk4xMjUyNjIzOTEiLCJHdWVzdCJdLCJuYmYiOjE3NzAyNzA4ODcsImV4cCI6MTc3MDM1NzI4NywiaXNzIjoiQmludXNTZXJ2aWNlcyIsImF1ZCI6Ik5leHVzLklkZW50aXR5U2VydmljZSJ9.RkGmHzwrxUDbjLnjiLvVeiWgS3oQppttI6Q1xlUnau3iAZk_uXBYUQBDr4ra5hpGKzIEb9EJAhZYGxl-pUjAmccTAZWwThyhtsw9eNlvZntmbqHs5TaqH7SS1YKJVZAJ7-NXkbSBjgogea8MKWxVLlfTl8J7K3CaSS3S9mz2O74",
+        "Authorization":"Bearer eyJhbGciOiJQUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6ImQ1MTc4ZmQzLThhNzQtNDEwMy1hNzcxLTNjNjVmYWQwYmQ2MiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJLRU5ORVRIIE1BWElNSUxMSUFOIFBSQU5BVEEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9lbWFpbGFkZHJlc3MiOiJrZW5uZXRoLnByYW5hdGFAYmludXMuYWMuaWQiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOlsiQk4xMjUyNjIzOTEiLCJHdWVzdCJdLCJuYmYiOjE3ODg2NjIyMDIsImV4cCI6MTc4ODc0ODYwMiwiaXNzIjoiQmludXNTZXJ2aWNlcyIsImF1ZCI6Ik5leHVzLklkZW50aXR5U2VydmljZSJ9.VNkyCGyLpDyLaN00BE9KPXh72OiLLcNkOHw2JCfbgA3pGlmV-vKLInlFAxdLlyH8NhMgM_xkwL9_UO_RDGj7fkVhnY6VPSNQItc1zEELUtk1P99SeoOA07xEnGMShitXVuhWH9XVwNGnGju6Sh95vZ3DfSJh2rJ_H5FKsKclxm8",
         "academicCareer":"RS1",
         "institution":"BNS01",
         "rOId":"437a8c7c-d8fa-4bdd-b920-eaeb965ea146",
